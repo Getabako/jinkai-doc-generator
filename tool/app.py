@@ -4,8 +4,12 @@
 """
 
 import os
-import json
-from flask import Flask, render_template, request, jsonify, send_file
+import sys
+
+# Vercel環境ではプロジェクトルートをパスに追加
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from flask import Flask, render_template, request, jsonify, send_file, Response
 from generator import generate_all_documents
 
 app = Flask(__name__)
@@ -43,10 +47,33 @@ def generate():
         return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
 
 
+@app.route('/generate_and_download', methods=['POST'])
+def generate_and_download():
+    """生成とダウンロードを1リクエストで完結（Vercel serverless対応）"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "データが送信されていません"}), 400
+
+        processed = preprocess_data(data)
+        zip_path, files = generate_all_documents(processed)
+
+        return send_file(zip_path, as_attachment=True,
+                        download_name="人材開発支援助成金_申請書類一式.zip",
+                        mimetype="application/zip")
+    except Exception as e:
+        import traceback
+        return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
+
+
 @app.route('/download')
 def download():
-    output_dir = os.path.join(BASE_DIR, "tool", "output")
-    zip_path = os.path.join(output_dir, "人材開発支援助成金_申請書類一式.zip")
+    # Vercel環境では/tmpから配信
+    if os.environ.get("VERCEL"):
+        zip_path = "/tmp/jinzai_output/人材開発支援助成金_申請書類一式.zip"
+    else:
+        zip_path = os.path.join(BASE_DIR, "tool", "output", "人材開発支援助成金_申請書類一式.zip")
+
     if os.path.exists(zip_path):
         return send_file(zip_path, as_attachment=True,
                         download_name="人材開発支援助成金_申請書類一式.zip")

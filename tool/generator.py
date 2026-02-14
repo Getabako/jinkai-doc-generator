@@ -904,7 +904,11 @@ def generate_form_8_5(data, output_path):
 
 def generate_all_documents(data):
     """全書類を生成してZIPにまとめる"""
-    output_dir = os.path.join(BASE_DIR, "tool", "output")
+    # Vercel環境では/tmpに出力、ローカルではtool/output
+    if os.environ.get("VERCEL"):
+        output_dir = "/tmp/jinzai_output"
+    else:
+        output_dir = os.path.join(BASE_DIR, "tool", "output")
     # 出力ディレクトリをクリア
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
