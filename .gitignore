@@ -1,0 +1,10 @@
+.DS_Store
+__pycache__/
+*.pyc
+tool/output/
+analyze_xlsx.py
+xlsx_analysis.txt
+xlsx_structure.json
+docs/
+001514283.pdf
+*.pdf
